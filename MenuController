@@ -1,0 +1,21 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class MenuController : MonoBehaviour
+{
+    public GameObject mainMenu;
+    public GameObject newGamePanel;
+
+    public void OpenNewGame()
+    {
+        mainMenu.SetActive(false);
+        newGamePanel.SetActive(true);
+    }
+
+    public void BackToMenu()
+    {
+        newGamePanel.SetActive(false);
+        mainMenu.SetActive(true);
+    }
+}
