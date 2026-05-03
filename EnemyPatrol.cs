@@ -6,13 +6,13 @@ public class EnemyPatrol : MonoBehaviour
 {
     [Header("Patrol Settings")]
     public float speed = 2f;
-    public float distance = 3f;           // Jarak patrol dari posisi awal
+    public float distance = 3f; // jarak patrol dari titik awal
 
     [Header("Components")]
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private Animator anim;
 
-    private Vector3 startPosition;
+    private Vector2 startPosition;
     private bool movingRight = true;
     private float currentSpeed;
 
@@ -24,72 +24,77 @@ public class EnemyPatrol : MonoBehaviour
         if (rb == null) rb = GetComponent<Rigidbody2D>();
         if (anim == null) anim = GetComponent<Animator>();
 
-        // Saran: Set Rigidbody2D Body Type = Kinematic di Inspector
-        if (rb != null)
-            rb.bodyType = RigidbodyType2D.Kinematic;
+        // Pastikan Rigidbody2D ada
+        if (rb == null)
+            rb = gameObject.AddComponent<Rigidbody2D>();
+
+        // Set sebagai Kinematic biar stabil
+        rb.bodyType = RigidbodyType2D.Kinematic;
+        rb.gravityScale = 0f;
+    }
+
+    void FixedUpdate()
+    {
+        Patrol();
     }
 
     void Update()
     {
-        Patrol();
-
-        // Update animasi Speed (kecepatan aktual)
-        currentSpeed = Mathf.Abs(rb != null ? rb.velocity.x : speed);
+        // Update animasi
+        currentSpeed = Mathf.Abs(speed);
         if (anim != null)
             anim.SetFloat("Speed", currentSpeed);
     }
 
     void Patrol()
     {
-        if (movingRight)
-        {
-            // Gerak ke kanan
-            if (rb != null)
-                rb.velocity = new Vector2(speed, rb.velocity.y);
-            else
-                transform.Translate(Vector2.right * speed * Time.deltaTime);
+        float moveDir = movingRight ? 1f : -1f;
 
-            // Cek batas kanan
-            if (transform.position.x >= startPosition.x + distance)
-            {
-                movingRight = false;
-                Flip();
-            }
+        Vector2 newPos = rb.position + new Vector2(moveDir * speed * Time.fixedDeltaTime, 0);
+
+        // Gerak pakai physics biar gak tembus
+        rb.MovePosition(newPos);
+
+        // Batas patrol kanan
+        if (movingRight && transform.position.x >= startPosition.x + distance)
+        {
+            movingRight = false;
+            Flip();
         }
-        else
+        // Batas patrol kiri
+        else if (!movingRight && transform.position.x <= startPosition.x - distance)
         {
-            // Gerak ke kiri
-            if (rb != null)
-                rb.velocity = new Vector2(-speed, rb.velocity.y);
-            else
-                transform.Translate(Vector2.left * speed * Time.deltaTime);
-
-            // Cek batas kiri
-            if (transform.position.x <= startPosition.x - distance)
-            {
-                movingRight = true;
-                Flip();
-            }
+            movingRight = true;
+            Flip();
         }
     }
 
     void Flip()
     {
-        // Flip sprite dengan mengubah localScale (cara paling aman untuk 2D)
         Vector3 scale = transform.localScale;
         scale.x *= -1f;
         transform.localScale = scale;
-
-        // Kalau mau pakai SpriteRenderer.flip (alternatif):
-        // SpriteRenderer sr = GetComponent<SpriteRenderer>();
-        // if (sr != null) sr.flipX = !sr.flipX;
     }
 
-    // Optional: Reset posisi patrol (bisa dipanggil dari luar)
+    // ⛔ INI BAGIAN PENTING BIAR GAK TEMBUS BENTENK
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Bentenk"))
+        {
+            movingRight = !movingRight;
+            Flip();
+        }
+    }
+
+    // Optional reset
     public void ResetPatrol()
     {
         transform.position = startPosition;
         movingRight = true;
-        Flip(); // pastikan menghadap kanan lagi
+
+        // pastikan arah benar
+        Vector3 scale = transform.localScale;
+        scale.x = Mathf.Abs(scale.x);
+        transform.localScale = scale;
     }
 }
