@@ -38,4 +38,9 @@ public class menu : MonoBehaviour
     {
         Application.Quit();
     }
+    public void NewGame(string namaScene)
+    {
+        PlayerPrefs.DeleteAll(); // Hapus semua data yang tersimpan sebelumnya
+        SceneManager.LoadScene("Game");
+    }
 }
